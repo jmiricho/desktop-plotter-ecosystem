@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desktop Plotter Workstation</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1e1e24;
+            color: #f5f5f7;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .dashboard {
+            width: 100%;
+            max-width: 600px;
+            background-color: #2a2a35;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        h1 { margin-top: 0; color: #00adb5; border-bottom: 2px solid #3f3f52; padding-bottom: 10px; }
+        .status-panel {
+            background-color: #22222b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            border-left: 5px solid #00adb5;
+        }
+        .status-panel.trip { border-left-color: #ff2e63; }
+        .status-text { font-weight: bold; font-size: 1.2rem; }
+        .control-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        button {
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-home { background-color: #00adb5; color: white; }
+        .btn-home:hover { background-color: #008c94; }
+        .btn-stream { background-color: #393e46; color: white; border: 1px solid #00adb5; }
+        .btn-stream:hover { background-color: #222831; }
+        .btn-estop {
+            grid-column: span 2;
+            background-color: #ff2e63;
+            color: white;
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            box-shadow: 0 4px 14px rgba(255, 46, 99, 0.4);
+        }
+        .btn-estop:hover { background-color: #e01b4c; }
+        .console {
+            background-color: #111116;
+            font-family: 'Courier New', Courier, monospace;
+            padding: 15px;
+            border-radius: 6px;
+            height: 120px;
+            overflow-y: auto;
+            color: #a3f7bf;
+        }
+    </style>
+</head>
+<body>
+
+<div class="dashboard">
+    <h1>Plotter System UI</h1>
+    
+    <div id="statusBox" class="status-panel">
+        System Status: <span id="statusTxt" class="status-text" style="color: #00adb5;">DISCONNECTED</span>
+    </div>
+
+    <div class="control-grid">
+        <button class="btn-home" onclick="triggerAction('Homing Sequence Initiated... Running G28.')">🏠 Home Machine</button>
+        <button class="btn-stream" onclick="triggerAction('Streaming Simulated Coordinates to Backend...')">⚡ Stream G-Code</button>
+        <button class="btn-estop" onclick="triggerEStop()">🛑 Emergency Stop</button>
+    </div>
+
+    <h3>System Terminal Feed</h3>
+    <div id="consoleLog" class="console">
+        > Awaiting connection dashboard launch...
+    </div>
+</div>
+
+<script>
+    const logBox = document.getElementById('consoleLog');
+    const statusTxt = document.getElementById('statusTxt');
+    const statusBox = document.getElementById('statusBox');
+
+    function triggerAction(message) {
+        if(statusTxt.textContent === "HARDWARE LOCKDOWN") return;
+        statusTxt.textContent = "BUSY";
+        statusTxt.style.color = "#ff9f43";
+        logBox.innerHTML += `<br>> ${message}`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function triggerEStop() {
+        statusTxt.textContent = "HARDWARE LOCKDOWN";
+        statusTxt.style.color = "#ff2e63";
+        statusBox.classList.add('trip');
+        logBox.innerHTML += `<br><span style="color: #ff2e63;">> [CRITICAL] E-STOP TRIGGERED! All operations aborted immediately.</span>`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+</script>
+</body>
+</html>
