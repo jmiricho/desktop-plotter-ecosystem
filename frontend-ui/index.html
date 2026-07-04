@@ -7,7 +7,7 @@
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #1e1e24;
+            background-color: #010111;
             color: #f5f5f7;
             margin: 0;
             padding: 20px;
@@ -94,24 +94,55 @@
 
 <script>
     const logBox = document.getElementById('consoleLog');
-    const statusTxt = document.getElementById('statusTxt');
-    const statusBox = document.getElementById('statusBox');
+const statusTxt = document.getElementById('statusTxt');
+const statusBox = document.getElementById('statusBox');
 
-    function triggerAction(message) {
-        if(statusTxt.textContent === "HARDWARE LOCKDOWN") return;
-        statusTxt.textContent = "BUSY";
-        statusTxt.style.color = "#ff9f43";
-        logBox.innerHTML += `<br>> ${message}`;
+// Connect directly to our running FastAPI backend over the WebSocket protocol
+const socket = new WebSocket('ws://127.0.0.1:8000/ws');
+
+socket.onopen = function(e) {
+    statusTxt.textContent = "CONNECTED TO BACKEND";
+    statusTxt.style.color = "#00adb5";
+    logBox.innerHTML += `<br>> [SYSTEM]: WebSocket communication link established.`;
+};
+
+socket.onmessage = function(event) {
+    const msg = event.data;
+    
+    // Parse incoming system states versus raw console feed updates
+    if (msg.startsWith("STATUS:")) {
+        const state = msg.replace("STATUS: ", "");
+        statusTxt.textContent = state;
+        if (state === "READY") {
+            statusTxt.style.color = "#00adb5";
+            statusBox.classList.remove('trip');
+        } else if (state.includes("ALARM")) {
+            statusTxt.style.color = "#ff2e63";
+            statusBox.classList.add('trip');
+        } else {
+            statusTxt.style.color = "#ff9f43"; // Processing state
+        }
+    } else if (msg.startsWith("CONSOLE:")) {
+        const cleanMsg = msg.replace("CONSOLE: ", "");
+        logBox.innerHTML += `<br>> ${cleanMsg}`;
         logBox.scrollTop = logBox.scrollHeight;
     }
+};
 
-    function triggerEStop() {
-        statusTxt.textContent = "HARDWARE LOCKDOWN";
-        statusTxt.style.color = "#ff2e63";
-        statusBox.classList.add('trip');
-        logBox.innerHTML += `<br><span style="color: #ff2e63;">> [CRITICAL] E-STOP TRIGGERED! All operations aborted immediately.</span>`;
-        logBox.scrollTop = logBox.scrollHeight;
-    }
+socket.onclose = function(e) {
+    statusTxt.textContent = "DISCONNECTED";
+    statusTxt.style.color = "#ff2e63";
+    logBox.innerHTML += `<br><span style="color: #ff2e63;">> [SYSTEM]: Connection lost. Is the Python backend running?</span>`;
+};
+
+function triggerAction(actionCommand) {
+    if (statusTxt.textContent.includes("ALARM")) return;
+    socket.send(actionCommand);
+}
+
+function triggerEStop() {
+    socket.send("CMD_ESTOP");
+}
 </script>
 </body>
 </html>
